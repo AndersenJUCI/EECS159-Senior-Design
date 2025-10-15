@@ -3,5 +3,14 @@
 !.gitignore
 !main.py
 !profiles.json
-!Dictionaries/
-!Dictionaries/*
+!dictionaries/
+!dictionaries/*
+
+
+.idea/
+*.iml
+__pycache__/
+*.pyc
+venv/
+*.xml
+
