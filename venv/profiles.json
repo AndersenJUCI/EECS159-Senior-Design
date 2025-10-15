@@ -1,4 +1,10 @@
 {
-    "active_profile": null,
-    "profiles": {}
+    "active_profile": "User",
+    "profiles": {
+        "User": {
+            "theme": "Default",
+            "dictionary": "GeneralUse",
+            "custom_words": []
+        }
+    }
 }

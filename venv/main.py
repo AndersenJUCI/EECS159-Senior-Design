@@ -176,6 +176,27 @@ def minimize():
         tray_thread = threading.Thread(target=setup_tray, daemon=True)
         tray_thread.start()
 
+# ---------------- Practice Box ----------------
+practice_frame = Frame(main_frame, bg=current_theme["border_color"], bd=2)
+practice_frame.place(
+    x=20, y=150,
+    width=window_width-40,
+    height=window_height-200
+)
+text_box = Text(
+    practice_frame,
+    bg=current_theme["bg"],
+    fg=current_theme["fg"],
+    insertbackground=current_theme["fg"],
+    font=("Calibri", 16),
+    wrap="word",
+    bd=0,
+    highlightthickness=0,
+    padx=10,
+    pady=10
+)
+text_box.pack(fill="both", expand=True)
+
 # ---------------- Top Bar ----------------
 top_bar = Frame(main_frame, bg=current_theme["bg"], height=50)
 top_bar.pack(side="top", fill="x")
