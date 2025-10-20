@@ -5,6 +5,8 @@
 !profiles.json
 !dictionaries/
 !dictionaries/*
+!gui/
+!gui/*
 
 
 .idea/

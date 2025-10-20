@@ -2,11 +2,12 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import simpledialog
 from tkinter import messagebox
-import pystray
-from PIL import Image, ImageDraw
-import threading
+
 import json
 import os
+
+import gui.themes as themes
+import gui.tray as tray
 
 #install pystray pillow
 
@@ -25,66 +26,11 @@ def save_profiles(data):
 
 profiles_data = load_profiles()
 
-# ---------------- Themes ----------------
-THEMES = {
-    "Default": {
-        "bg": "#2c3e50",
-        "fg": "white",
-        "border_color": "#1f2a38",
-    },
-    "Dark": {
-            "bg": "#1e1e1e",
-            "fg": "#e0e0e0",
-            "border_color": "#333333",
-    },
-    "Light": {
-            "bg": "#f0f0f0",
-            "fg": "#3a3a3a",
-            "border_color": "#cccccc",
-    },
-    "Monokai": {
-            "bg": "#272822",
-            "fg": "#f8f8f2",
-            "border_color": "#f92672",
-    },
-    "Nord": {
-            "bg": "#2e3440",
-            "fg": "#d8dee9",
-            "border_color": "#88c0d0",
-    },
-    "Pastel": {
-            "bg": "#fff8e7",
-            "fg": "#5a5a5a",
-            "border_color": "#ffd166",
-    }
-}
-
-
-def apply_theme(widget=None):
-    if widget is None:
-        widget = root
-    try:
-        widget.configure(bg=current_theme["bg"])
-    except Exception:
-        pass
-    try:
-        widget.configure(fg=current_theme["fg"])
-    except Exception:
-        pass
-
-    if widget == border_frame:
-        try:
-            widget.configure(bg=current_theme["border_color"])
-        except Exception:
-            pass
-    for child in widget.winfo_children():
-        apply_theme(child)
-
 active_profile = profiles_data.get("active_profile")
 if active_profile and active_profile in profiles_data["profiles"]:
-    current_theme = THEMES[profiles_data["profiles"][active_profile]["theme"]]
+    current_theme = themes.get_theme(profiles_data["profiles"][active_profile].get("theme", "Default"))
 else:
-    current_theme = THEMES["Default"]
+    current_theme = themes.get_theme("Default")
 
 def load_dictionary_list():
     dictionaries_dir = os.path.join(os.path.dirname(__file__), "Dictionaries")
@@ -122,62 +68,10 @@ main_frame.place(x=border_thickness,y=border_thickness,
 
 # ---------------- System Tray ----------------
 
-# Icon Thread Listens For Clicks, Tray Thread Schedules Restores To Main Thread
-icon = None
-tray_thread = None
-def create_icon():
-    # Icon W/H and Icon Background Colors
-    sprite = Image.new("RGB", (64,64), color=(46,64,90))
-    d = ImageDraw.Draw(sprite)
-    # Where Text Starts
-    d.text((10, 20), "⌨️", fill=(255,255,255))
-    return sprite
-
-def restore_window(systray_icon=None, item=None):
-    global icon
-    def restore():
-        # Unminimize, Top Of Windows, Keyboard Focus
-        root.deiconify()
-        root.lift()
-        root.focus_force()
-    # Schedules Restore To Main Thread
-    root.after(0, restore)
-    # Remove Icon From Tray
-    if icon:
-        icon.stop()
-        icon = None
-
-def quit_app(systray_icon=None, item=None):
-    global icon
-    # Remove Icon If Quit
-    if icon:
-        icon.stop()
-    root.quit()
-
-def setup_tray():
-    global icon
-    # Creates Icon, Allows Right Click Ability From Tray For Restore And Quit
-    icon = pystray.Icon(
-        "StenoApp",
-        create_icon(),
-        "Stenography Keyboard",
-        menu=pystray.Menu(
-            pystray.MenuItem("Restore", restore_window, default=True),
-            pystray.MenuItem("Quit", quit_app)
-        )
-    )
-
-    icon.run()
-
-def minimize():
-    global icon, tray_thread
-    root.withdraw()
-    if icon is None:
-        tray_thread = threading.Thread(target=setup_tray, daemon=True)
-        tray_thread.start()
+system_tray = tray.SystemTray(root)
 
 # ---------------- Practice Box ----------------
-practice_frame = Frame(main_frame, bg=current_theme["border_color"], bd=2)
+practice_frame = Frame(main_frame, bg=current_theme["bg"], highlightbackground=current_theme["border_color"], highlightthickness=2)
 practice_frame.place(
     x=20, y=150,
     width=window_width-40,
@@ -273,8 +167,8 @@ def load_profile():
         save_profiles(profiles_data)
         load_current_profile(choice)
         theme_name = profiles_data["profiles"][choice].get("theme", "Default")
-        current_theme = THEMES[theme_name]
-        apply_theme()
+        current_theme = themes.get_theme(theme_name)
+        themes.apply_theme(root, current_theme, border_frame=border_frame)
         dictionary_name = profiles_data["profiles"][choice].get("dictionary", "None")
         current_dictionary_label.config(text=f"Current Dictionary: {dictionary_name}")
 
@@ -435,10 +329,10 @@ separator = ttk.Separator(top_bar, orient="vertical")
 separator.pack(side="left", fill="y", padx=2)
 
 
-exit_button = Button(top_bar, text="❌", command=quit_app, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
+exit_button = Button(top_bar, text="❌", command=system_tray.quit_app, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
 exit_button.pack(side="right", padx=2)
 
-minimize_button = Button(top_bar, text="━", command=minimize, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
+minimize_button = Button(top_bar, text="━", command=system_tray.minimize, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
 minimize_button.pack(side="right", padx=2)
 
 def show_settings():
@@ -468,7 +362,7 @@ def show_settings():
     theme_var.set(profiles_data["profiles"][active_profile].get("theme", "Default"))
 
     theme_dropdown = ttk.Combobox(settings_window, textvariable=theme_var, state="readonly")
-    theme_dropdown["values"] = list(THEMES.keys())
+    theme_dropdown["values"] = list(themes.THEMES.keys())
     theme_dropdown.pack(pady=5)
 
 
@@ -490,8 +384,8 @@ def show_settings():
         profiles_data["profiles"][active_profile]["dictionary"] = dictionary_var.get()
         save_profiles(profiles_data)
 
-        current_theme = THEMES[theme_var.get()]
-        apply_theme()
+        current_theme = themes.get_theme(theme_var.get())
+        themes.apply_theme(root, current_theme, border_frame=border_frame)
 
         current_dictionary_label.config(text=f"Current Dictionary: {dictionary_var.get()}")
 
