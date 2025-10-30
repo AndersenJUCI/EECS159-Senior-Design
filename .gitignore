@@ -1,4 +1,4 @@
-*
+gui
 
 !.gitignore
 !main.py
@@ -8,11 +8,10 @@
 !gui/
 !gui/*
 
-
+venv/
 .idea/
 *.iml
 __pycache__/
 *.pyc
-venv/
 *.xml
 

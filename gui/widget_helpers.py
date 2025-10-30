@@ -1,153 +1,33 @@
 from tkinter import *
-from tkinter import ttk
-from tkinter import simpledialog
-from tkinter import messagebox
-
+from tkinter import messagebox, simpledialog, ttk
+import gui.themes as themes
 import json
 import os
 
-import gui.themes as themes
-import gui.tray as tray
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+PROFILE_PATH = os.path.join(ROOT_DIR, "profiles.json")
 
-#install pystray pillow
+current_profile_label = None
+current_dictionary_label = None
+root = None
+current_theme = None
+border_frame = None
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "profiles.json")
-
-# ---------------- Profile JSON ----------------
 def load_profiles():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
+    if os.path.exists(PROFILE_PATH):
+        with open(PROFILE_PATH, "r") as f:
             return json.load(f)
     return {"active_profile" : None, "profiles" : {}}
 
-def save_profiles(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
 
 profiles_data = load_profiles()
 
-active_profile = profiles_data.get("active_profile")
-if active_profile and active_profile in profiles_data["profiles"]:
-    current_theme = themes.get_theme(profiles_data["profiles"][active_profile].get("theme", "Default"))
-else:
-    current_theme = themes.get_theme("Default")
+def set_labels(profile_label, dictionary_label):
+    global current_profile_label, current_dictionary_label
+    current_profile_label = profile_label
+    current_dictionary_label = dictionary_label
 
-def load_dictionary_list():
-    dictionaries_dir = os.path.join(os.path.dirname(__file__), "Dictionaries")
-    if not os.path.exists(dictionaries_dir):
-        os.makedirs(dictionaries_dir)
-    dict_files = [f for f in os.listdir(dictionaries_dir) if f.endswith(".json")]
-    return [os.path.splitext(f)[0] for f in dict_files]
-
-# ---------------- Base Window ----------------
-root = Tk()
-root.title("Stenography Keyboard")
-window_width = 1280
-window_height = 720
-# Screen Geometry Starting Position
-root.geometry(f"{window_width}x{window_height}")
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
-x = (screen_width // 2) - (window_width // 2)
-y = (screen_height // 2) - (window_height // 2)
-root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-root.resizable(False, False)
-root.configure(bg=current_theme["bg"])
-#Remove Native OS Title Bar
-root.overrideredirect(True)
-
-# ---------------- Border ----------------
-border_thickness = 5
-border_frame = Frame(root, bg=current_theme["border_color"])
-border_frame.place(x=0, y=0, relwidth=1, relheight=1)
-main_frame = Frame(border_frame, bg=current_theme["bg"])
-main_frame.place(x=border_thickness,y=border_thickness,
-                 width=window_width-border_thickness*2,
-                 height=window_height-border_thickness*2)
-
-# ---------------- System Tray ----------------
-
-system_tray = tray.SystemTray(root)
-
-# ---------------- Practice Box ----------------
-practice_frame = Frame(main_frame, bg=current_theme["bg"], highlightbackground=current_theme["border_color"], highlightthickness=2)
-practice_frame.place(
-    x=20, y=150,
-    width=window_width-40,
-    height=window_height-200
-)
-text_box = Text(
-    practice_frame,
-    bg=current_theme["bg"],
-    fg=current_theme["fg"],
-    insertbackground=current_theme["fg"],
-    font=("Calibri", 16),
-    wrap="word",
-    bd=0,
-    highlightthickness=0,
-    padx=10,
-    pady=10
-)
-text_box.pack(fill="both", expand=True)
-
-# ---------------- Top Bar ----------------
-top_bar = Frame(main_frame, bg=current_theme["bg"], height=50)
-top_bar.pack(side="top", fill="x")
-
-current_profile_frame = Frame(main_frame, bg=current_theme["bg"])
-current_profile_frame.pack(side="top", fill="x", pady=(20,0))
-
-current_profile_label = Label(
-    current_profile_frame,
-    text="Current Profile: None",
-    bg=current_theme["bg"],
-    fg="white",
-    font=("Calibri", 16, "bold"),
-    anchor="w",
-    padx=10
-)
-current_profile_label.pack(fill="x")
-
-current_dictionary_frame = Frame(main_frame, bg=current_theme["bg"])
-current_dictionary_frame.pack(side="top", fill="x", pady=(10,0))
-
-current_dictionary_label = Label(
-    current_dictionary_frame,
-    text="Current Dictionary: None",
-    bg=current_theme["bg"],
-    fg="white",
-    font=("Calibri", 16, "bold"),
-    anchor="w",
-    padx=10
-)
-current_dictionary_label.pack(fill="x")
-
-#Move Bar
-def click_move(event):
-    root.x = event.x
-    root.y = event.y
-def drag_move(event):
-    x = event.x_root - root.x
-    y = event.y_root - root.y
-    root.geometry(f"+{x}+{y}")
-
-#Bind Movement To Top Bar
-top_bar.bind("<ButtonPress-1>", click_move)
-top_bar.bind("<B1-Motion>", drag_move)
-
-#Padx Aura
-logo = Label(top_bar, text="⌨  Stenography Keyboard", bg=current_theme["bg"], fg=current_theme["fg"], font=("Arial", 20, "bold"))
-logo.pack(side="left", padx=(0,30))
-
-separator = ttk.Separator(top_bar, orient="vertical")
-separator.pack(side="left", fill="y", padx=2)
-
-profile_label = Label(top_bar, text="Profile:", bg=current_theme["bg"], fg=current_theme["fg"], font=("Calibri", 16, "bold"))
-#Padx Left And Right
-profile_label.pack(side="left", padx=(0,2))
-
-# ---------------- Top Bar Widgets ----------------
 def load_current_profile(name):
     current_profile_label.config(text=f"Current Profile: {name}")
 
@@ -295,47 +175,8 @@ def edit_profile():
     Button(button_frame, text="Rename", command=rename_action, width=10).pack(side="left", padx=10)
     Button(button_frame, text="Delete", command=delete_action, width=10).pack(side="right", padx=10)
 
-if profiles_data["active_profile"]:
-    load_current_profile(profiles_data["active_profile"])
-
-new_profile_button = Button(top_bar, text="🆕 New", command=new_profile, bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-new_profile_button.pack(side="left", padx=2)
-
-load_profile_button = Button(top_bar, text="📂 Load", command=load_profile, bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-load_profile_button.pack(side="left", padx=2)
-
-edit_profile_button = Button(top_bar, text="🖊 Edit", command=edit_profile, bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-edit_profile_button.pack(side="left", padx=2)
-
-save_profile_button = Button(top_bar, text="💾 Save", command=save_current_profile, bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-save_profile_button.pack(side="left", padx=2)
-
-
-separator = ttk.Separator(top_bar, orient="vertical")
-separator.pack(side="left", fill="y", padx=2)
-
-dictionary_label = Label(top_bar, text="Dictionary:", bg=current_theme["bg"], fg=current_theme["fg"], font=("Calibri", 16, "bold"))
-#Padx Left And Right
-dictionary_label.pack(side="left", padx=(0,2))
-
-#Border Width 0
-import_dictionary_button = Button(top_bar, text="⬇ Import", bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-import_dictionary_button.pack(side="left", padx=2)
-
-export_dictionary_button = Button(top_bar, text="⬆ Export", bg=current_theme["bg"], fg=current_theme["fg"], bd=0, font=("Calibri", 16))
-export_dictionary_button.pack(side="left", padx=2)
-
-separator = ttk.Separator(top_bar, orient="vertical")
-separator.pack(side="left", fill="y", padx=2)
-
-
-exit_button = Button(top_bar, text="❌", command=system_tray.quit_app, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
-exit_button.pack(side="right", padx=2)
-
-minimize_button = Button(top_bar, text="━", command=system_tray.minimize, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
-minimize_button.pack(side="right", padx=2)
-
 def show_settings():
+    global current_theme
     active_profile = profiles_data.get("active_profile")
     if not active_profile:
         messagebox.showerror("Error", "No Active Profile Selected")
@@ -379,7 +220,7 @@ def show_settings():
     dictionary_dropdown.pack(pady=5)
 
     def save_settings():
-        global current_theme, current_dictionary_label
+        global current_dictionary_label
         profiles_data["profiles"][active_profile]["theme"] = theme_var.get()
         profiles_data["profiles"][active_profile]["dictionary"] = dictionary_var.get()
         save_profiles(profiles_data)
@@ -394,11 +235,8 @@ def show_settings():
     save_button = Button(settings_window, text="Save Settings", command=save_settings, bg=current_theme["bg"], fg=current_theme["fg"], font=("Calibri", 12))
     save_button.pack(pady=20)
 
-
-settings_button = Button(top_bar, text="⚙️", command=show_settings, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
-settings_button.pack(side="right", padx=2)
-
 def show_help():
+    global current_theme
     help_window = Toplevel(root)
     help_window.title("Help")
     window_width = 640
@@ -425,9 +263,13 @@ def show_help():
     Label(help_window, text="To Import A Dictionary, Select Import", bg=current_theme["bg"], fg=current_theme["fg"]).pack(anchor="w", padx=10)
     Label(help_window, text="To Export A Dictionary, Select Export", bg=current_theme["bg"], fg=current_theme["fg"]).pack(anchor="w", padx=10)
 
+def save_profiles(data):
+    with open(PROFILE_PATH, "w") as f:
+        json.dump(data, f, indent=4)
 
-help_button = Button(top_bar, text="❓", command=show_help, bg=current_theme["bg"], fg=current_theme["fg"], bd=0)
-help_button.pack(side="right", padx=2)
-
-
-root.mainloop()
+def load_dictionary_list():
+    dictionaries_dir = os.path.join(ROOT_DIR, "Dictionaries")
+    if not os.path.exists(dictionaries_dir):
+        os.makedirs(dictionaries_dir)
+    dict_files = [f for f in os.listdir(dictionaries_dir) if f.endswith(".json")]
+    return [os.path.splitext(f)[0] for f in dict_files]

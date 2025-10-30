@@ -1,0 +1,10 @@
+{
+    "active_profile": "Test",
+    "profiles": {
+        "Test": {
+            "theme": "Dark",
+            "dictionary": "LawEnforcement",
+            "custom_words": []
+        }
+    }
+}
