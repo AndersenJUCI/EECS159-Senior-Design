@@ -4,8 +4,9 @@ import gui.themes as themes
 import gui.tray as tray
 import gui.widgets as widgets
 import gui.widget_helpers as helpers
+import translation.translate as trans
 
-# install pystray pillow
+# install pystray, pillow, keyboard
 
 # ---------------- Profile JSON ----------------
 
@@ -52,28 +53,6 @@ helpers.border_frame = border_frame
 system_tray = tray.SystemTray(root)
 top_bar = widgets.main_bar(root, main_frame, system_tray, {"bg":current_theme["bg"], "fg":current_theme["fg"], "border_color":current_theme["border_color"]}, border_frame)
 
-# ---------------- Practice Box (Eventually It's Own Window) ----------------
-practice_frame = Frame(
-    main_frame,
-    bg=current_theme["bg"],
-    highlightbackground=current_theme["border_color"],
-    highlightthickness=2
-)
-practice_frame.place(x=20, y=150, width=window_width-40, height=window_height-200)
-
-text_box = Text(
-    practice_frame,
-    bg=current_theme["bg"],
-    fg=current_theme["fg"],
-    insertbackground=current_theme["fg"],
-    font=("Calibri", 16),
-    wrap="word",
-    bd=0,
-    highlightthickness=0,
-    padx=10,
-    pady=10
-)
-text_box.pack(fill="both", expand=True)
 
 # ---------------- Top Bar ----------------
 
@@ -81,7 +60,7 @@ current_profile_frame = Frame(
     main_frame,
     bg=current_theme["bg"]
 )
-current_profile_frame.pack(side="top", fill="x", pady=(20, 0))
+current_profile_frame.pack(side="top", anchor="w", pady=(20, 0))
 
 current_profile_label = Label(
     current_profile_frame,
@@ -98,7 +77,7 @@ current_dictionary_frame = Frame(
     main_frame,
     bg=current_theme["bg"]
 )
-current_dictionary_frame.pack(side="top", fill="x", pady=(10, 0))
+current_dictionary_frame.pack(side="top", anchor="w", pady=(10, 0))
 
 current_dictionary_label = Label(
     current_dictionary_frame,
@@ -132,5 +111,14 @@ top_bar.bind("<B1-Motion>", drag_move)
 
 if profiles_data["active_profile"]:
     helpers.load_current_profile(profiles_data["active_profile"])
+    active_profile = profiles_data["active_profile"]
+    dictionary_name = profiles_data["profiles"][active_profile].get("dictionary", "None")
+    current_dictionary_label.config(text=f"Current Dictionary: {dictionary_name}")
+
+    if dictionary_name and dictionary_name != "None":
+        trans.load_active(dictionary_name)
+        trans.reset_strokes()
+
+trans.start_listener()
 
 root.mainloop()

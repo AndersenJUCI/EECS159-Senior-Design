@@ -1,9 +1,9 @@
 {
-    "active_profile": "Test",
+    "active_profile": "Advisor Demonstration",
     "profiles": {
-        "Test": {
-            "theme": "Dark",
-            "dictionary": "LawEnforcement",
+        "Advisor Demonstration": {
+            "theme": "Nord",
+            "dictionary": "GeneralUse",
             "custom_words": []
         }
     }

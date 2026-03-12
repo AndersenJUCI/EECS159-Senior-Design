@@ -1,17 +1,14 @@
-gui
-
-!.gitignore
-!main.py
-!profiles.json
-!dictionaries/
-!dictionaries/*
-!gui/
-!gui/*
-
 venv/
+
 .idea/
 *.iml
+
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 *.xml
+
+
+
 
